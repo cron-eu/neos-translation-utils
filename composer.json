@@ -1,0 +1,15 @@
+{
+  "name": "cron/neos-translation-utils",
+  "type": "neos-package",
+  "require": {
+    "neos/neos": "~4.3",
+    "ext-simplexml": "*"
+  },
+  "license": "proprietary",
+  "description": "CLI Translation Utils for Neos",
+  "autoload": {
+    "psr-4": {
+      "CRON\\NeosTranslationUtils\\": "Classes"
+    }
+  }
+}
