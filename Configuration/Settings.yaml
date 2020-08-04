@@ -1,0 +1,9 @@
+CRON:
+  NeosTranslationUtils:
+    nodeTypes:
+      includePattern: 'Configuration/NodeTypes.*.yaml'
+      translationMagicValue: 'i18n'
+    translations:
+      path: 'Resources/Private/Translations'
+      fileExtension: 'xlf'
+      templateFile: 'resource://CRON.NeosTranslationUtils/Private/Generator/Translation.xlf.tmpl'
