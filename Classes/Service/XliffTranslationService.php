@@ -79,7 +79,7 @@ class XliffTranslationService
 
         $xliffFilePath = $this->buildXliffTranslationFilePath($basePath, $locale, $pathParts);
 
-        $fileContents = file_get_contents($xliffFilePath);
+        $fileContents = @file_get_contents($xliffFilePath);
 
         if ($fileContents) {
             // without replacing the xmlns attribute no nodes will be found using xpath
