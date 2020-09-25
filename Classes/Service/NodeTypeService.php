@@ -118,7 +118,7 @@ class NodeTypeService
             return null;
         }
 
-        $translationKeys = $this->extractTranslationKeys($yamlValues);
+        $translationKeys = $this->processTranslationIdExceptions($this->extractTranslationKeys($yamlValues));
 
         // split filename into parts by '.' and remove the .yaml-ending
         $filePathParts = explode('/', $filePath);
@@ -156,5 +156,40 @@ class NodeTypeService
         }
 
         return $nodeTypeFiles;
+    }
+
+    /**
+     * This method handles various exceptional cases where the i18n translation ID is not strictly the NodeType's path.
+     * See https://neos.github.io/neos/4.3/source-class-Neos.Neos.Aspects.NodeTypeConfigurationEnrichmentAspect.html
+     *
+     * @param array $translationIds
+     * @return array
+     */
+    protected function processTranslationIdExceptions($translationIds) {
+        if (!is_array($translationIds)) {
+            return [];
+        }
+
+        return array_map(function($translationId) {
+            $translationId = trim($translationId);
+
+            if (preg_match('/^(properties\\.[^\\.]+)\\.ui\\.label$/', $translationId, $matches)) {
+                return $matches[1];
+            }
+
+            if (preg_match('/^ui\\.inspector\\.(groups\\.[^\\.]+)\\.label$/', $translationId, $matches)) {
+                return $matches[1];
+            }
+
+            if (preg_match('/^properties\\.([^\\.]+)\\.ui\\.inspector\\.editorOptions\\.values\\.([^\\.]+)\\.label$/', $translationId, $matches)) {
+                return 'properties.' . $matches[1] .'.selectBoxEditor.values.' . $matches[2];
+            }
+
+            if (preg_match('/^ui\\.creationDialog\\.elements\\.([^\\.]+)\\.ui\\.label$/', $translationId, $matches)) {
+                return 'creationDialog.' . $matches[1];
+            }
+
+            return $translationId;
+        }, $translationIds);
     }
 }
