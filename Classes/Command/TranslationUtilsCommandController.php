@@ -5,6 +5,7 @@ namespace CRON\NeosTranslationUtils\Command;
 use CRON\NeosTranslationUtils\Service\XliffTranslationService;
 use CRON\NeosTranslationUtils\Utils\FileUtils;
 use Neos\Flow\Annotations as Flow;
+use Neos\Flow\Mvc\Exception\StopActionException;
 use Neos\Flow\Package\Exception\UnknownPackageException;
 use Neos\Flow\Package\PackageManager;
 use \Neos\Flow\Cli\CommandController;
@@ -71,6 +72,7 @@ class TranslationUtilsCommandController extends CommandController
      * @param string $targetLanguage
      *
      * @throws UnknownPackageException
+     * @throws StopActionException
      */
     public function updateCommand($packageKey, $sourceLanguage, $targetLanguage)
     {
@@ -80,7 +82,15 @@ class TranslationUtilsCommandController extends CommandController
             return;
         }
 
-        $this->translationService->updateXliffTranslationFiles($packageKey, $packageDirectoryPath, $sourceLanguage, $targetLanguage);
+        $numUpdatedTranslations = $this->translationService->updateXliffTranslationFiles($packageKey, $packageDirectoryPath, $sourceLanguage, $targetLanguage);
+
+        if ($numUpdatedTranslations > 0) {
+            $this->outputLine(sprintf('Updated %s translation(s) in total.', $numUpdatedTranslations));
+            $this->quit(2);
+        } else {
+            $this->outputLine('Everything up to date.');
+            $this->quit(0);
+        }
     }
 
     /**
@@ -92,6 +102,7 @@ class TranslationUtilsCommandController extends CommandController
      * @param string $sourceLanguage
      *
      * @throws UnknownPackageException
+     * @throws StopActionException
      */
     public function updateSourceCommand($packageKey, $sourceLanguage)
     {
@@ -101,6 +112,14 @@ class TranslationUtilsCommandController extends CommandController
             return;
         }
 
-        $this->translationService->updateXliffTranslationFiles($packageKey, $packageDirectoryPath, $sourceLanguage, null);
+        $numUpdatedTranslations = $this->translationService->updateXliffTranslationFiles($packageKey, $packageDirectoryPath, $sourceLanguage, null);
+
+        if ($numUpdatedTranslations > 0) {
+            $this->outputLine(sprintf('Updated %s translation(s) in total.', $numUpdatedTranslations));
+            $this->quit(2);
+        } else {
+            $this->outputLine('Everything up to date.');
+            $this->quit(0);
+        }
     }
 }
