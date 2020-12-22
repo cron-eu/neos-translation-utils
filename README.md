@@ -55,7 +55,7 @@ As one language should be considered the "source"-language, this tool will alway
 If this tool is used with a target-language, it will adapt the translations from the source language as &lt;source&gt;-tags in the XLIFF file of the target language.
 As only the &lt;target&gt;-tag gets utilized in a target-language, this only helps visually.
 
-To better recognize missing labels when viewing pages in the backend, missing translations will have the value `#<vendor>:<translation-id>`.
+To better recognize missing labels when viewing pages in the backend, missing translations will have the value `#<locale>/<file path>:<translation-id>`.
 
 Usage
 ----
