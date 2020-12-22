@@ -61,23 +61,27 @@ class XliffTranslationService
      * In any case this method returns an instance of XliffTranslation with all trans-units from the given translation IDs.
      *
      * @param string $basePath
-     * @param string $locale
+     * @param string $packageKey
+     * @param string $sourceLanguage
+     * @param string|null $targetLanguage
      * @param array $pathParts
      * @param array $translationIds
+     * @param array $updatedTranslations
      *
-     * @return XliffTranslation|null
+     * @return XliffTranslation
      */
-    protected function generateXliffTranslation($basePath, $locale, $pathParts, $translationIds)
+    protected function generateXliffTranslation($basePath, $packageKey, $sourceLanguage, $targetLanguage, $pathParts, $translationIds, &$updatedTranslations)
     {
-        $productName = '';
-        $sourceLanguage = '';
-        $targetLanguage = '';
+        $productName = $packageKey;
         $transUnits = [];
 
         // map for the trans-units that were able to be parsed from the file
         $fileTransUnits = [];
 
+        $locale = $targetLanguage ?: $sourceLanguage;
+
         $xliffFilePath = $this->buildXliffTranslationFilePath($basePath, $locale, $pathParts);
+        $localeFilePath = sprintf('%s/%s', $locale, implode('/', $pathParts));
 
         $fileContents = @file_get_contents($xliffFilePath);
 
@@ -94,8 +98,8 @@ class XliffTranslationService
 
                     foreach ($translationIds as $translationId) {
                         $transUnitEls = $bodyNode->xpath('trans-unit[@id="' . $translationId . '"]');
-                        $source = '';
-                        $target = '';
+                        $source = false;
+                        $target = false;
 
                         if (count($transUnitEls) > 0) {
                             $transUnitNode = $transUnitEls[0];
@@ -126,12 +130,27 @@ class XliffTranslationService
 
         foreach ($translationIds as $translationId) {
             $transUnit = new TransUnit($translationId, '', '');
-
+            $fileTransUnit = null;
             if (isset($fileTransUnits[$translationId])) {
                 $fileTransUnit = $fileTransUnits[$translationId];
+            }
 
+            if ($fileTransUnit && isset($fileTransUnit['source']) && $fileTransUnit['source'] !== false) {
                 $transUnit->setSource($fileTransUnit['source']);
-                $transUnit->setTarget($fileTransUnit['target']);
+            } else {
+                // set a placeholder that identifies the file and translation
+                $transUnit->setSource(sprintf('#%s:%s', $localeFilePath, $translationId));
+
+                $updatedTranslations[] = sprintf('%s:%s', $xliffFilePath, $translationId);
+            }
+
+            if ($fileTransUnit && isset($fileTransUnit['target']) && $fileTransUnit['target'] !== false) {
+                $transUnit->setSource($fileTransUnit['target']);
+            } else if ($targetLanguage != null) {
+                // set a placeholder that identifies the file and translation
+                $transUnit->setSource(sprintf('#%s:%s', $localeFilePath, $translationId));
+
+                $updatedTranslations[] = sprintf('%s:%s', $xliffFilePath, $translationId);
             }
 
             $transUnits[] = $transUnit;
@@ -181,7 +200,7 @@ class XliffTranslationService
             return false;
         }
 
-        $this->output->outputLine(sprintf('INFO: Updated XLIFF file \'%s\'.', $filePath));
+        //$this->output->outputLine(sprintf('INFO: Updated XLIFF file \'%s\'.', $filePath));
         return true;
     }
 
@@ -233,6 +252,18 @@ class XliffTranslationService
     }
 
     /**
+     * @param array $updatedTranslations
+     */
+    protected function logUpdatedTranslations($updatedTranslations)
+    {
+        if (count($updatedTranslations) > 0) {
+            foreach ($updatedTranslations as $updatedTranslation) {
+                $this->output->outputLine(sprintf('Updated: %s', $updatedTranslation));
+            }
+        }
+    }
+
+    /**
      * Update or create the XLIFF translation files for the given source language and target language (optional)
      * using the NodeType files in the given package.
      * The source translations will be used in the source-tags in the target language XLIFF file.
@@ -241,29 +272,33 @@ class XliffTranslationService
      * @param string $packagePath
      * @param string $sourceLanguage
      * @param string|null $targetLanguage
+     * @return int the number of updated translations
      */
     public function updateXliffTranslationFiles($packageKey, $packagePath, $sourceLanguage, $targetLanguage = null)
     {
         $nodeTypes = $this->nodeTypeService->getNodeTypes($packagePath);
+        $numUpdatedTranslations = 0;
 
         foreach ($nodeTypes as $nodeType) {
-            $sourceXliffTranslation = $this->generateXliffTranslation($packagePath, $sourceLanguage, $nodeType->getFileNameParts(), $nodeType->getTranslationIds());
-
-            $sourceXliffTranslation->setProductName($packageKey);
-            $sourceXliffTranslation->setSourceLanguage($sourceLanguage);
-            $sourceXliffTranslation->setTargetLanguage(null);
+            $updatedTranslations = [];
+            $sourceXliffTranslation = $this->generateXliffTranslation($packagePath, $packageKey, $sourceLanguage, null, $nodeType->getFileNameParts(), $nodeType->getTranslationIds(), $updatedTranslations);
 
             $this->writeXliffTranslationFile($packagePath, $sourceLanguage, $nodeType->getFileNameParts(), $sourceXliffTranslation);
+            $this->logUpdatedTranslations($updatedTranslations);
+            $numUpdatedTranslations += count($updatedTranslations);
 
             if ($targetLanguage) {
-                $targetXliffTranslation = $this->generateXliffTranslation($packagePath, $targetLanguage, $nodeType->getFileNameParts(), $nodeType->getTranslationIds());
-                $targetXliffTranslation->setProductName($packageKey);
-                $targetXliffTranslation->setSourceLanguage($sourceLanguage);
-                $targetXliffTranslation->setTargetLanguage($targetLanguage);
+                $updatedTranslations = [];
+                $targetXliffTranslation = $this->generateXliffTranslation($packagePath, $packageKey, $sourceLanguage, $targetLanguage, $nodeType->getFileNameParts(), $nodeType->getTranslationIds(), $updatedTranslations);
+
                 $targetXliffTranslation->updateTransUnitsFromSourceXliff($sourceXliffTranslation);
 
                 $this->writeXliffTranslationFile($packagePath, $targetLanguage, $nodeType->getFileNameParts(), $targetXliffTranslation);
+                $this->logUpdatedTranslations($updatedTranslations);
+                $numUpdatedTranslations += count($updatedTranslations);
             }
         }
+
+        return $numUpdatedTranslations;
     }
 }
