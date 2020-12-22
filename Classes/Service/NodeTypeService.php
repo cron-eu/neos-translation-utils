@@ -185,6 +185,10 @@ class NodeTypeService
                 return 'properties.' . $matches[1] .'.selectBoxEditor.values.' . $matches[2];
             }
 
+            if (preg_match('/^properties\\.([^\\.]+)\\.ui\\.inspector\\.editorOptions\\.placeholder$/', $translationId, $matches)) {
+                return 'properties.' . $matches[1] .'.selectBoxEditor.placeholder';
+            }
+
             if (preg_match('/^ui\\.creationDialog\\.elements\\.([^\\.]+)\\.ui\\.label$/', $translationId, $matches)) {
                 return 'creationDialog.' . $matches[1];
             }
