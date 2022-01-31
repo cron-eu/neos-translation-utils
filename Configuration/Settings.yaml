@@ -1,7 +1,9 @@
 CRON:
   NeosTranslationUtils:
     nodeTypes:
-      includePattern: 'Configuration/NodeTypes.*.yaml'
+      includePatterns:
+        - 'Configuration/NodeTypes.*.yaml'
+        - 'NodeTypes/**/*.yaml'
       translationMagicValue: 'i18n'
     translations:
       path: 'Resources/Private/Translations'

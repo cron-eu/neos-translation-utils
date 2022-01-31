@@ -17,10 +17,10 @@ use Symfony\Component\Yaml\Parser as YamlParser;
 class NodeTypeService
 {
     /**
-     * @Flow\InjectConfiguration(path="nodeTypes.includePattern")
-     * @var string
+     * @Flow\InjectConfiguration(path="nodeTypes.includePatterns")
+     * @var array
      */
-    protected $includePattern;
+    protected $includePatterns;
 
     /**
      * @Flow\InjectConfiguration(path="nodeTypes.translationMagicValue")
@@ -49,11 +49,17 @@ class NodeTypeService
      * Return the absolute paths of the included NodeType files.
      *
      * @param string $basePath
-     * @return array|null
+     * @return array
      */
     protected function getNodeTypeFilePaths($basePath)
     {
-        return $this->fileUtils->globFiles($basePath, $this->includePattern);
+        $nodeTypeFilePaths = [];
+
+        foreach ($this->includePatterns as $includePattern) {
+            $nodeTypeFilePaths = array_merge($nodeTypeFilePaths, $this->fileUtils->globFiles($basePath, $includePattern));
+        }
+
+        return $nodeTypeFilePaths;
     }
 
     /**
@@ -139,10 +145,6 @@ class NodeTypeService
     public function getNodeTypes($basePath)
     {
         $nodeTypeFilePaths = $this->getNodeTypeFilePaths($basePath);
-
-        if ($nodeTypeFilePaths == null) {
-            return null;
-        }
 
         $nodeTypeFiles = [];
 
