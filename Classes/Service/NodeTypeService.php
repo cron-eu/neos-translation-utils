@@ -4,8 +4,7 @@ namespace CRON\NeosTranslationUtils\Service;
 
 use CRON\NeosTranslationUtils\Service\Model\NodeType;
 use CRON\NeosTranslationUtils\Utils\FileUtils;
-use /** @noinspection PhpUnusedAliasInspection */
-    Neos\Flow\Annotations as Flow;
+use Neos\Flow\Annotations as Flow;
 
 use Symfony\Component\Yaml\Parser as YamlParser;
 
@@ -17,10 +16,10 @@ use Symfony\Component\Yaml\Parser as YamlParser;
 class NodeTypeService
 {
     /**
-     * @Flow\InjectConfiguration(path="nodeTypes.includePattern")
-     * @var string
+     * @Flow\InjectConfiguration(path="nodeTypes.includePatterns")
+     * @var array
      */
-    protected $includePattern;
+    protected $includePatterns;
 
     /**
      * @Flow\InjectConfiguration(path="nodeTypes.translationMagicValue")
@@ -49,11 +48,17 @@ class NodeTypeService
      * Return the absolute paths of the included NodeType files.
      *
      * @param string $basePath
-     * @return array|null
+     * @return array
      */
     protected function getNodeTypeFilePaths($basePath)
     {
-        return $this->fileUtils->globFiles($basePath, $this->includePattern);
+        $nodeTypeFilePaths = [];
+
+        foreach ($this->includePatterns as $includePattern) {
+            $nodeTypeFilePaths = array_merge($nodeTypeFilePaths, $this->fileUtils->globFiles($basePath, $includePattern));
+        }
+
+        return $nodeTypeFilePaths;
     }
 
     /**
@@ -120,10 +125,18 @@ class NodeTypeService
 
         $translationKeys = $this->processTranslationIdExceptions($this->extractTranslationKeys($yamlValues));
 
-        // split filename into parts by '.' and remove the .yaml-ending
-        $filePathParts = explode('/', $filePath);
-        $fileName = $filePathParts[count($filePathParts) - 1];
-        $fileNameParts = explode('.', preg_replace('/\.yaml$/', '', $fileName));
+        // determine the path/filename parts of the translation file to be created for this NodeType.
+        // A NodeType like 'Vendor.Package:Content.Division.ComponentName' should yield a translation file
+        // Content/Division/ComponentName.xlf in the NodeTypes directory of the locale.
+        $nodeTypeFullNames = array_keys($yamlValues);
+
+        if (count($nodeTypeFullNames) > 0) {
+            $nodeTypeFullName = $nodeTypeFullNames[0];
+        } else {
+            return null;
+        }
+
+        $fileNameParts = explode('.', explode(':', $nodeTypeFullName)[1]);
 
         return new NodeType($filePath, $fileNameParts, $translationKeys);
     }
@@ -139,10 +152,6 @@ class NodeTypeService
     public function getNodeTypes($basePath)
     {
         $nodeTypeFilePaths = $this->getNodeTypeFilePaths($basePath);
-
-        if ($nodeTypeFilePaths == null) {
-            return null;
-        }
 
         $nodeTypeFiles = [];
 
