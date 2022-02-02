@@ -4,8 +4,7 @@ namespace CRON\NeosTranslationUtils\Service;
 
 use CRON\NeosTranslationUtils\Service\Model\NodeType;
 use CRON\NeosTranslationUtils\Utils\FileUtils;
-use /** @noinspection PhpUnusedAliasInspection */
-    Neos\Flow\Annotations as Flow;
+use Neos\Flow\Annotations as Flow;
 
 use Symfony\Component\Yaml\Parser as YamlParser;
 
@@ -126,10 +125,18 @@ class NodeTypeService
 
         $translationKeys = $this->processTranslationIdExceptions($this->extractTranslationKeys($yamlValues));
 
-        // split filename into parts by '.' and remove the .yaml-ending
-        $filePathParts = explode('/', $filePath);
-        $fileName = $filePathParts[count($filePathParts) - 1];
-        $fileNameParts = explode('.', preg_replace('/\.yaml$/', '', $fileName));
+        // determine the path/filename parts of the translation file to be created for this NodeType.
+        // A NodeType like 'Vendor.Package:Content.Division.ComponentName' should yield a translation file
+        // Content/Division/ComponentName.xlf in the NodeTypes directory of the locale.
+        $nodeTypeFullNames = array_keys($yamlValues);
+
+        if (count($nodeTypeFullNames) > 0) {
+            $nodeTypeFullName = $nodeTypeFullNames[0];
+        } else {
+            return null;
+        }
+
+        $fileNameParts = explode('.', explode(':', $nodeTypeFullName)[1]);
 
         return new NodeType($filePath, $fileNameParts, $translationKeys);
     }

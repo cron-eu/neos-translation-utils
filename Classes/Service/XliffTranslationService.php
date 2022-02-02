@@ -232,7 +232,7 @@ class XliffTranslationService
      */
     protected function buildXliffTranslationFilePath($basePath, $locale, $pathParts)
     {
-        return implode('/', [rtrim($basePath, '/'), trim($this->translationsPath, '/'), $locale, implode('/', $pathParts)]) . '.' . $this->translationFileExtension;
+        return implode('/', [rtrim($basePath, '/'), trim($this->translationsPath, '/'), $locale, 'NodeTypes', implode('/', $pathParts)]) . '.' . $this->translationFileExtension;
     }
 
     /**
