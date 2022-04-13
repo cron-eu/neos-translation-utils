@@ -194,6 +194,10 @@ class NodeTypeService
                 return $matches[1];
             }
 
+            if (preg_match('/^ui\\.inspector\\.(tabs\\.[^\\.]+)\\.label$/', $translationId, $matches)) {
+                return $matches[1];
+            }
+
             if (preg_match('/^properties\\.([^\\.]+)\\.ui\\.inspector\\.editorOptions\\.values\\.([^\\.]+)\\.label$/', $translationId, $matches)) {
                 return 'properties.' . $matches[1] .'.selectBoxEditor.values.' . $matches[2];
             }
