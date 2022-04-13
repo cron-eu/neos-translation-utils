@@ -136,7 +136,11 @@ class NodeTypeService
             return null;
         }
 
-        $fileNameParts = explode('.', explode(':', $nodeTypeFullName)[1]);
+        // before ':' is the package key, if existent
+        // after ':' is the NodeType name
+        $nodeTypeFullNameSplit = explode(':', $nodeTypeFullName);
+
+        $fileNameParts = explode('.', $nodeTypeFullNameSplit[array_key_last($nodeTypeFullNameSplit)]);
 
         return new NodeType($filePath, $fileNameParts, $translationKeys);
     }
@@ -187,6 +191,10 @@ class NodeTypeService
             }
 
             if (preg_match('/^ui\\.inspector\\.(groups\\.[^\\.]+)\\.label$/', $translationId, $matches)) {
+                return $matches[1];
+            }
+
+            if (preg_match('/^ui\\.inspector\\.(tabs\\.[^\\.]+)\\.label$/', $translationId, $matches)) {
                 return $matches[1];
             }
 
