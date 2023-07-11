@@ -207,7 +207,7 @@ class XliffTranslationService
     /**
      * Render the given template file with the given variables
      *
-     * Taken from the Neos.Kickstarterer package.
+     * Taken from the Neos.Kickstarter package.
      *
      * @param string $templatePathAndFilename
      * @param array $contextVariables
